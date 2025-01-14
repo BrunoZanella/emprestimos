@@ -68,6 +68,11 @@
                                             {% endif %}
                                         </button>
                                     </form>
+                                    <form method="POST" action="{{ url_for('delete_payment', payment_id=payment.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            Deletar
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             {% endfor %}

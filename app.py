@@ -273,6 +273,20 @@ def main():
     else:
         show_new_loan_form()
 
+def delete_loan(loan_id):
+    conn = sqlite3.connect('loans.db')
+    c = conn.cursor()
+    
+    # Remover pagamentos associados ao empréstimo
+    c.execute("DELETE FROM payments WHERE loan_id = ?", (loan_id,))
+    
+    # Remover o empréstimo
+    c.execute("DELETE FROM loans WHERE id = ?", (loan_id,))
+    
+    conn.commit()
+    conn.close()
+
+
 def show_loans_list():
     conn = sqlite3.connect('loans.db')
     loans_df = pd.read_sql_query("SELECT * FROM loans", conn)
@@ -311,9 +325,13 @@ def show_loans_list():
                             (1 - payment['paid'], payment['id'])
                         )
                         conn.commit()
-#                        st.experimental_rerun()
                         st.rerun()
 
+                # Botão para apagar o empréstimo
+                if st.button(f"Excluir Empréstimo - {loan['client_name']}", key=f"delete_{loan['id']}"):
+                    delete_loan(loan['id'])
+                    st.success(f"Empréstimo de {loan['client_name']} excluído com sucesso!")
+                    st.rerun()
                         
     else:
         st.info("Nenhum empréstimo cadastrado.")
@@ -365,7 +383,7 @@ def show_new_loan_form():
                 # Generate PDF and send email
                 pdf_path = create_pdf(loan_data, payments_data)
                 
-                subject = f"New Loan Agreement - {client_name}"
+                subject = f"Novo acordo de empréstimo - {client_name}"
                 body = f"""
                 <!DOCTYPE html>
                 <html>
@@ -417,7 +435,7 @@ def show_new_loan_form():
                         <p>Atenciosamente,</p>
                         <p><strong>Equipe Financeira</strong></p>
                         <p>E-mail: {EMAIL_HOST_USER}</p>
-                        <p>Telefone: (62) 9 8295-7089</p>
+                        <p>Telefone: (62)9 8295-7089</p>
                     </div>
                 </body>
                 </html>
