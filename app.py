@@ -499,6 +499,57 @@ def show_new_loan_form():
     st.markdown("<h3>Novo Empréstimo</h3>", unsafe_allow_html=True)
 
 
+#    st.markdown("<br><br>", unsafe_allow_html=True)  # Adiciona dois saltos de linha para afastar as colunas do conteúdo acima
+
+    col1, col2 = st.columns([2, 1])
+
+    # 1/4 da página: Campos de entrada
+    with col1:
+    #    st.write("### Dados do Empréstimo")
+        client_name = st.text_input("Nome do Cliente", key="client_name")
+        amount = st.number_input(
+            "Valor do Empréstimo",
+            min_value=0.0,
+            step=100.0,
+            key='amount'
+        )
+        interest_rate = st.number_input(
+            "Taxa de Juros Anual (%)",
+            min_value=0.0,
+            step=0.1,
+            key='rate'
+        )
+        installments = st.number_input(
+            "Número de Parcelas",
+            min_value=1,
+            step=1,
+            key='installments'
+        )
+
+    # 2/4 da página: Tabela de parcelas
+    with col2:
+        with st.columns([2, 15])[1]:  # Coluna 1: 75% (formulário), Coluna 2: 25% (botão e mensagens)
+        #    st.markdown("<br><br>", unsafe_allow_html=True)  # Adiciona dois saltos de linha para afastar as colunas do conteúdo acima
+            st.write("### Previsão das Parcelas")
+            st.markdown("<br>", unsafe_allow_html=True)
+            if amount > 0 and installments >= 1 and interest_rate > 0:
+                calc = calculate_compound_interest(amount, interest_rate, installments, installments)
+                
+                installment_data = []
+                start_date = datetime.now()
+                for i in range(installments):
+                    due_date = start_date + timedelta(days=(i + 1) * 30)
+                    installment_data.append({
+                        'Parcela': i + 1,
+                        'Vencimento': due_date.strftime('%d/%m/%Y'),
+                        'Valor': f"R$ {calc['monthly_payment']:.2f}"
+                    })
+                
+                df = pd.DataFrame(installment_data)
+                st.dataframe(df, height=250)
+
+
+
     # Botão para criar empréstimo e mensagens de status
     with st.columns([5, 1])[1]:  # Coluna 1: 75% (formulário), Coluna 2: 25% (botão e mensagens)
 
@@ -539,54 +590,6 @@ def show_new_loan_form():
             'rate': 0.0,
             'installments': 1
         }
-
-#    st.markdown("<br><br>", unsafe_allow_html=True)  # Adiciona dois saltos de linha para afastar as colunas do conteúdo acima
-
-    col1, col2 = st.columns([2, 1])
-
-    # 1/4 da página: Campos de entrada
-    with col1:
-        st.write("### Dados do Empréstimo")
-        client_name = st.text_input("Nome do Cliente", key="client_name")
-        amount = st.number_input(
-            "Valor do Empréstimo",
-            min_value=0.0,
-            step=100.0,
-            key='amount'
-        )
-        interest_rate = st.number_input(
-            "Taxa de Juros Anual (%)",
-            min_value=0.0,
-            step=0.1,
-            key='rate'
-        )
-        installments = st.number_input(
-            "Número de Parcelas",
-            min_value=1,
-            step=1,
-            key='installments'
-        )
-
-    # 2/4 da página: Tabela de parcelas
-    with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)  # Adiciona dois saltos de linha para afastar as colunas do conteúdo acima
-        st.write("### Previsão das Parcelas")
-        
-        if amount > 0 and installments >= 1 and interest_rate > 0:
-            calc = calculate_compound_interest(amount, interest_rate, installments, installments)
-            
-            installment_data = []
-            start_date = datetime.now()
-            for i in range(installments):
-                due_date = start_date + timedelta(days=(i + 1) * 30)
-                installment_data.append({
-                    'Parcela': i + 1,
-                    'Vencimento': due_date.strftime('%d/%m/%Y'),
-                    'Valor': f"R$ {calc['monthly_payment']:.2f}"
-                })
-            
-            df = pd.DataFrame(installment_data)
-            st.dataframe(df, height=250)
 
     st.markdown("<h4>Resumo do Empréstimo</h4>", unsafe_allow_html=True)
 
