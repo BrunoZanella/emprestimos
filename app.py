@@ -401,7 +401,7 @@ def show_loans_list():
         st.subheader("Empréstimos Ativos")
         
         for _, loan in loans_df.iterrows():
-            with st.expander(f"Cliente: {loan['client_name']} - R$ {loan['amount']:.2f}"):
+            with st.expander(f"Cliente: {loan['client_name']} - R$ {loan['amount']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")):
                 # Edição do empréstimo
                 edit_col1, edit_col2, edit_col3 = st.columns(3)
                 new_amount = edit_col1.number_input(
@@ -414,6 +414,8 @@ def show_loans_list():
                     value=float(loan['interest_rate']),
                     key=f"rate_{loan['id']}"
                 )
+                st.markdown("<br>", unsafe_allow_html=True)
+                
                 if edit_col3.button("Atualizar Empréstimo", key=f"update_{loan['id']}"):
                     c = conn.cursor()
                     c.execute(
@@ -437,11 +439,17 @@ def show_loans_list():
                     conn.commit()
                     st.success("Empréstimo atualizado com sucesso!")
                     st.rerun()
-                
+
+                # Botão para apagar o empréstimo
+                if st.button(f"Excluir Empréstimo - {loan['client_name']}", key=f"delete_{loan['id']}"):
+                    delete_loan(loan['id'])
+                    st.success(f"Empréstimo de {loan['client_name']} excluído com sucesso!")
+                    st.rerun()
+                    
                 # Métricas do empréstimo
                 col1, col2, col3, col4 = st.columns(4)
-                col1.metric("Valor Principal", f"R$ {loan['amount']:.2f}")
-                col2.metric("Taxa de Juros", f"{loan['interest_rate']}%")
+                col1.metric("Valor Principal", f"R$ {loan['amount']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                col2.metric("Taxa de Juros", f"{loan['interest_rate']:.2f}%")
                 col3.metric("Parcelas", loan['installments'])
                 col4.metric("Data Início", loan['start_date'][:10])
                 
@@ -455,17 +463,28 @@ def show_loans_list():
                 total_remaining = payments_df[payments_df['paid'] == 0]['amount'].sum()
                 
                 col1, col2 = st.columns(2)
-                col1.metric("Total Pago", f"R$ {total_paid:.2f}")
-                col2.metric("Total Restante", f"R$ {total_remaining:.2f}")
+                col1.metric("Total Pago", f"R$ {total_paid:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                col2.metric("Total Restante", f"R$ {total_remaining:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                st.markdown("<br><br>", unsafe_allow_html=True)
                 
                 st.write("### Parcelas")
                 for _, payment in payments_df.iterrows():
                     cols = st.columns([1, 2, 2, 2, 3])
                     cols[0].write(f"#{payment['installment_number']}")
-                    cols[1].write(payment['due_date'][:10])
-                    cols[2].write(f"R$ {payment['amount']:.2f}")
+                    
+                    # Formatação da data para o formato dia/mês/ano
+                    formatted_date = datetime.strptime(payment['due_date'], '%Y-%m-%d').strftime('%d/%m/%Y')
+                    cols[1].write(formatted_date)
+                    
+                    # Formatação do valor com pontos no padrão brasileiro
+                    formatted_amount = f"R$ {payment['amount']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                    cols[2].write(formatted_amount)
+                    
+                    # Status da parcela (Pago ou Pendente)
                     status = "🟢 Pago" if payment['paid'] else "🔴 Pendente"
                     cols[3].write(status)
+                    
+                    # Botão para marcar a parcela como paga ou não paga
                     if cols[4].button(
                         "Marcar como Não Pago" if payment['paid'] else "Marcar como Pago",
                         key=f"btn_{payment['id']}"
@@ -478,11 +497,7 @@ def show_loans_list():
                         conn.commit()
                         st.rerun()
 
-                # Botão para apagar o empréstimo
-                if st.button(f"Excluir Empréstimo - {loan['client_name']}", key=f"delete_{loan['id']}"):
-                    delete_loan(loan['id'])
-                    st.success(f"Empréstimo de {loan['client_name']} excluído com sucesso!")
-                    st.rerun()
+
                     
     else:
         st.info("Nenhum empréstimo cadastrado.")
@@ -553,13 +568,13 @@ def show_new_loan_form():
     # Botão para criar empréstimo e mensagens de status
     with st.columns([5, 1])[1]:  # Coluna 1: 75% (formulário), Coluna 2: 25% (botão e mensagens)
 
-        # Botão para criar o empréstimo
+        # Botão de criação do empréstimo
         if st.button("Criar Empréstimo"):
             if client_name and amount > 0 and installments > 0:
                 conn = sqlite3.connect('loans.db')
                 c = conn.cursor()
                 
-                # Criar empréstimo
+                # Create loan
                 c.execute('''
                     INSERT INTO loans (client_name, amount, interest_rate, installments, start_date)
                     VALUES (?, ?, ?, ?, ?)
@@ -567,19 +582,94 @@ def show_new_loan_form():
                 
                 loan_id = c.lastrowid
                 
-                # Criar pagamentos
+                # Create payments
+                monthly_amount = (amount * (1 + interest_rate/100)) / installments
+                calc = calculate_compound_interest(amount, interest_rate, installments, installments)
                 start_date = datetime.now()
+                
                 for i in range(installments):
-                    due_date = start_date + timedelta(days=(i + 1) * 30)
+                    due_date = start_date + timedelta(days=(i+1)*30)
                     c.execute('''
                         INSERT INTO payments (loan_id, installment_number, amount, due_date)
                         VALUES (?, ?, ?, ?)
-                    ''', (loan_id, i + 1, calc['monthly_payment'], due_date.strftime('%Y-%m-%d')))
+                    ''', (loan_id, i+1, calc['monthly_payment'], due_date.strftime('%Y-%m-%d')))
                 
                 conn.commit()
-                conn.close()
                 
-                st.success(f"Empréstimo de {client_name} criado com sucesso!")
+                # Get loan and payments data for PDF
+                c.execute("SELECT * FROM loans WHERE id = ?", (loan_id,))
+                loan_data = dict(zip([col[0] for col in c.description], c.fetchone()))
+                
+                c.execute("SELECT * FROM payments WHERE loan_id = ?", (loan_id,))
+                payments_data = [dict(zip([col[0] for col in c.description], row)) for row in c.fetchall()]
+                
+                # Generate PDF and send email
+                pdf_path = create_pdf(loan_data, payments_data)
+                
+                subject = f"Novo Contrato de Empréstimo - {client_name}"
+                body = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body {{
+                            font-family: Arial, sans-serif;
+                            color: #333;
+                            line-height: 1.6;
+                        }}
+                        h2 {{
+                            color: #4CAF50;
+                        }}
+                        p {{
+                            margin: 10px 0;
+                        }}
+                        .highlight {{
+                            background-color: #f9f9f9;
+                            padding: 10px;
+                            border-left: 5px solid #4CAF50;
+                            margin: 20px 0;
+                        }}
+                        .footer {{
+                            margin-top: 30px;
+                            font-size: 12px;
+                            color: #777;
+                            border-top: 1px solid #ddd;
+                            padding-top: 10px;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <h2>Confirmação de Novo Empréstimo</h2>
+                    <p>Olá, <strong>{client_name}</strong>,</p>
+                    <p>Estamos felizes em confirmar os detalhes do seu novo empréstimo. Por favor, revise as informações abaixo:</p>
+
+                    <div class="highlight">
+                        <p><strong>Valor do Empréstimo:</strong> R${amount:.2f}</p>
+                        <p><strong>Taxa de Juros:</strong> {interest_rate}% ao ano</p>
+                        <p><strong>Número de Parcelas:</strong> {installments}</p>
+                        <p><strong>Valor da Parcela Mensal (aproximado):</strong> R${monthly_amount:.2f}</p>
+                        <p><strong>Data de Início:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
+                    </div>
+
+                    <p>Anexamos a este e-mail uma cópia do contrato do empréstimo em formato PDF para sua conveniência.</p>
+                    <p>Se você tiver alguma dúvida ou precisar de assistência, não hesite em entrar em contato conosco.</p>
+
+                    <div class="footer">
+                        <p>Atenciosamente,</p>
+                        <p><strong>Equipe Financeira</strong></p>
+                        <p>E-mail: {EMAIL_HOST_USER}</p>
+                        <p>Telefone: (62)9 8295-7089</p>
+                    </div>
+                </body>
+                </html>
+                """
+                
+                send_email(EMAIL_HOST_USER, subject, body, pdf_path)
+                os.remove(pdf_path)  # Clean up PDF file
+                
+                conn.close()
+                st.success("Empréstimo criado com sucesso!")
+                st.rerun()
             else:
                 st.error("Por favor, preencha todos os campos corretamente.")
 
