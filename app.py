@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
@@ -9,12 +12,16 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 import os
 from reportlab.lib import colors
+<<<<<<< HEAD
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+=======
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 import sqlite3
 import threading
 import time
+<<<<<<< HEAD
 
 
 
@@ -60,6 +67,19 @@ def calculate_compound_interest(principal, rate, time, installments):
 
 
 
+=======
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+
+# Email Configuration
+EMAIL_HOST = st.secrets["EMAIL_HOST"]
+EMAIL_PORT = int(st.secrets["EMAIL_PORT"])
+EMAIL_HOST_USER = st.secrets["EMAIL_HOST_USER"]
+EMAIL_HOST_PASSWORD = st.secrets["EMAIL_HOST_PASSWORD"]
+DEFAULT_FROM_EMAIL = st.secrets["DEFAULT_FROM_EMAIL"]
+
+
+# Database setup
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
 def init_db():
     conn = sqlite3.connect('loans.db')
     c = conn.cursor()
@@ -161,39 +181,64 @@ def create_pdf(loan_data, payments_data):
     doc.build(elements)
     return filename
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
 def send_email(to_email, subject, body, attachment_path=None):
     msg = MIMEMultipart()
     msg['From'] = DEFAULT_FROM_EMAIL
     msg['To'] = to_email
     msg['Subject'] = subject
+<<<<<<< HEAD
     
     msg.attach(MIMEText(body, 'html'))
     
+=======
+
+    msg.attach(MIMEText(body, 'html'))
+
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
     if attachment_path and os.path.exists(attachment_path):
         with open(attachment_path, 'rb') as f:
             pdf = MIMEApplication(f.read(), _subtype='pdf')
             pdf.add_header('Content-Disposition', 'attachment', filename=os.path.basename(attachment_path))
             msg.attach(pdf)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
     with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
         server.starttls()
         server.login(EMAIL_HOST_USER, EMAIL_HOST_PASSWORD)
         server.send_message(msg)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
 def check_due_payments():
     while True:
         conn = sqlite3.connect('loans.db')
         c = conn.cursor()
         today = datetime.now().date()
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
         c.execute('''
             SELECT p.*, l.client_name, l.installments
             FROM payments p
             JOIN loans l ON p.loan_id = l.id
             WHERE p.paid = 0 AND date(p.due_date) = date(?)
         ''', (today.strftime('%Y-%m-%d'),))
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
         payments = c.fetchall()
         for payment in payments:
             subject = f"Lembrete de Pagamento - Parcela {payment[2]}"
@@ -284,6 +329,7 @@ def check_due_payments():
             </html>
             """
             send_email(EMAIL_HOST_USER, subject, body)
+<<<<<<< HEAD
         
         conn.close()
         time.sleep(86400)  # Check every 24 hours
@@ -360,6 +406,17 @@ def main():
 
     st.markdown('<div class="main-container">', unsafe_allow_html=True)
     st.markdown("<h2>Zanella's Empréstimos</h2>", unsafe_allow_html=True)
+=======
+
+        conn.close()
+        time.sleep(86400)  # Verifica a cada 24 horas
+
+
+def main():
+    st.set_page_config(page_title="Empréstimos Zanella's", layout="wide")
+    st.title("Empréstimos Zanella's")
+    
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
     init_db()
     
     # Start payment checker in a separate thread
@@ -377,8 +434,11 @@ def main():
     else:
         show_new_loan_form()
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
 def delete_loan(loan_id):
     conn = sqlite3.connect('loans.db')
     c = conn.cursor()
@@ -402,6 +462,7 @@ def show_loans_list():
         
         for _, loan in loans_df.iterrows():
             with st.expander(f"Cliente: {loan['client_name']} - R$ {loan['amount']:.2f}"):
+<<<<<<< HEAD
                 # Edição do empréstimo
                 edit_col1, edit_col2, edit_col3 = st.columns(3)
                 new_amount = edit_col1.number_input(
@@ -441,6 +502,10 @@ def show_loans_list():
                 # Métricas do empréstimo
                 col1, col2, col3, col4 = st.columns(4)
                 col1.metric("Valor Principal", f"R$ {loan['amount']:.2f}")
+=======
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Valor", f"R$ {loan['amount']:.2f}")
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
                 col2.metric("Taxa de Juros", f"{loan['interest_rate']}%")
                 col3.metric("Parcelas", loan['installments'])
                 col4.metric("Data Início", loan['start_date'][:10])
@@ -450,6 +515,7 @@ def show_loans_list():
                     conn, params=(loan['id'],)
                 )
                 
+<<<<<<< HEAD
                 # Cálculo do total pago e restante
                 total_paid = payments_df[payments_df['paid'] == 1]['amount'].sum()
                 total_remaining = payments_df[payments_df['paid'] == 0]['amount'].sum()
@@ -458,6 +524,8 @@ def show_loans_list():
                 col1.metric("Total Pago", f"R$ {total_paid:.2f}")
                 col2.metric("Total Restante", f"R$ {total_remaining:.2f}")
                 
+=======
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
                 st.write("### Parcelas")
                 for _, payment in payments_df.iterrows():
                     cols = st.columns([1, 2, 2, 2, 3])
@@ -483,12 +551,17 @@ def show_loans_list():
                     delete_loan(loan['id'])
                     st.success(f"Empréstimo de {loan['client_name']} excluído com sucesso!")
                     st.rerun()
+<<<<<<< HEAD
                     
+=======
+                        
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
     else:
         st.info("Nenhum empréstimo cadastrado.")
     
     conn.close()
 
+<<<<<<< HEAD
 
 
 # Função principal do formulário
@@ -504,11 +577,27 @@ def show_new_loan_form():
 
         # Botão para criar o empréstimo
         if st.button("Criar Empréstimo"):
+=======
+def show_new_loan_form():
+    st.subheader("Novo Empréstimo")
+    
+    with st.form("new_loan"):
+        client_name = st.text_input("Nome do Cliente")
+        amount = st.number_input("Valor do Empréstimo", min_value=0.0, step=100.0)
+        interest_rate = st.number_input("Taxa de Juros (%)", min_value=0.0, step=0.1)
+        installments = st.number_input("Número de Parcelas", min_value=1, step=1)
+        
+        if st.form_submit_button("Criar Empréstimo"):
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
             if client_name and amount > 0 and installments > 0:
                 conn = sqlite3.connect('loans.db')
                 c = conn.cursor()
                 
+<<<<<<< HEAD
                 # Criar empréstimo
+=======
+                # Create loan
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9
                 c.execute('''
                     INSERT INTO loans (client_name, amount, interest_rate, installments, start_date)
                     VALUES (?, ?, ?, ?, ?)
@@ -516,6 +605,7 @@ def show_new_loan_form():
                 
                 loan_id = c.lastrowid
                 
+<<<<<<< HEAD
                 # Criar pagamentos
                 start_date = datetime.now()
                 for i in range(installments):
@@ -607,3 +697,99 @@ if __name__ == '__main__':
     main()
     
     
+=======
+                # Create payments
+                monthly_amount = (amount * (1 + interest_rate/100)) / installments
+                start_date = datetime.now()
+                
+                for i in range(installments):
+                    due_date = start_date + timedelta(days=(i+1)*30)
+                    c.execute('''
+                        INSERT INTO payments (loan_id, installment_number, amount, due_date)
+                        VALUES (?, ?, ?, ?)
+                    ''', (loan_id, i+1, monthly_amount, due_date.strftime('%Y-%m-%d')))
+                
+                conn.commit()
+                
+                # Get loan and payments data for PDF
+                c.execute("SELECT * FROM loans WHERE id = ?", (loan_id,))
+                loan_data = dict(zip([col[0] for col in c.description], c.fetchone()))
+                
+                c.execute("SELECT * FROM payments WHERE loan_id = ?", (loan_id,))
+                payments_data = [dict(zip([col[0] for col in c.description], row)) for row in c.fetchall()]
+                
+                # Generate PDF and send email
+                pdf_path = create_pdf(loan_data, payments_data)
+                
+                subject = f"Novo acordo de empréstimo - {client_name}"
+                body = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body {{
+                            font-family: Arial, sans-serif;
+                            color: #333;
+                            line-height: 1.6;
+                        }}
+                        h2 {{
+                            color: #4CAF50;
+                        }}
+                        p {{
+                            margin: 10px 0;
+                        }}
+                        .highlight {{
+                            background-color: #f9f9f9;
+                            padding: 10px;
+                            border-left: 5px solid #4CAF50;
+                            margin: 20px 0;
+                        }}
+                        .footer {{
+                            margin-top: 30px;
+                            font-size: 12px;
+                            color: #777;
+                            border-top: 1px solid #ddd;
+                            padding-top: 10px;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <h2>Confirmação de Novo Empréstimo</h2>
+                    <p>Olá, <strong>{client_name}</strong>,</p>
+                    <p>Estamos felizes em confirmar os detalhes do seu novo empréstimo. Por favor, revise as informações abaixo:</p>
+
+                    <div class="highlight">
+                        <p><strong>Valor do Empréstimo:</strong> R${amount:.2f}</p>
+                        <p><strong>Taxa de Juros:</strong> {interest_rate}% ao ano</p>
+                        <p><strong>Número de Parcelas:</strong> {installments}</p>
+                        <p><strong>Valor da Parcela Mensal (aproximado):</strong> R${monthly_amount:.2f}</p>
+                        <p><strong>Data de Início:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
+                    </div>
+
+                    <p>Anexamos a este e-mail uma cópia do contrato do empréstimo em formato PDF para sua conveniência.</p>
+                    <p>Se você tiver alguma dúvida ou precisar de assistência, não hesite em entrar em contato conosco.</p>
+
+                    <div class="footer">
+                        <p>Atenciosamente,</p>
+                        <p><strong>Equipe Financeira</strong></p>
+                        <p>E-mail: {EMAIL_HOST_USER}</p>
+                        <p>Telefone: (62)9 8295-7089</p>
+                    </div>
+                </body>
+                </html>
+                """
+
+                
+                send_email(EMAIL_HOST_USER, subject, body, pdf_path)
+                os.remove(pdf_path)  # Clean up PDF file
+                
+                conn.close()
+                st.success("Empréstimo criado com sucesso!")
+                st.rerun()
+
+            else:
+                st.error("Por favor, preencha todos os campos corretamente.")
+
+if __name__ == '__main__':
+    main()
+>>>>>>> 775346f580d13bf16d4ec118daae94c2969170c9

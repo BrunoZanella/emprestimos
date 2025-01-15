@@ -1,0 +1,7 @@
+
+flask
+flask-sqlalchemy
+reportlab
+schedule
+streamlit
+pandas
