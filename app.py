@@ -19,11 +19,11 @@ import time
 
 
 # Email Configuration
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'zanellabruno7@gmail.com'
-EMAIL_HOST_PASSWORD = 'ygwk qrzo rcvg iztv'
-DEFAULT_FROM_EMAIL = 'zanellabruno7@gmail.com'
+EMAIL_HOST = st.secrets["EMAIL_HOST"]
+EMAIL_PORT = int(st.secrets["EMAIL_PORT"])
+EMAIL_HOST_USER = st.secrets["EMAIL_HOST_USER"]
+EMAIL_HOST_PASSWORD = st.secrets["EMAIL_HOST_PASSWORD"]
+DEFAULT_FROM_EMAIL = st.secrets["DEFAULT_FROM_EMAIL"]
 
 def calculate_compound_interest(principal, rate, time, installments):
     """
